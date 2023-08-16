@@ -1,0 +1,15 @@
+div {
+  /* 중앙 정렬 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* 패딩 설정 */
+  padding: 40px 0;
+  /* 상단 테두리 설정 */
+  border-top: 1px solid gray;
+  /* 너비 */
+  width: 100%;
+  /* z-index 설정 */
+  position: relative;
+  z-index: 100;
+}
