@@ -1,4 +1,7 @@
+import axios from 'axios';
 import React, { useEffect, useState } from 'react'
+import requests from '../api/requests';
+import styled from 'styled-components';
 
 //! 웹 페이지 배너 구현
 // : 배너에 표시되는 영화 정보를 불러오는 기능 담당
@@ -21,12 +24,99 @@ type MovieDetail = {
 export default function Banner() {
 
   const [movie, setMovie] = useState<MovieDetail | null>(null);
+  const [isClicked, setIsClicked] = useState<boolean>(false);
 
   useEffect(() => {
     fetchData();
   }, [])
 
-  return (
-    <div>Banner</div>
-  )
+  const fetchData = async () => {
+    // 현재 상영 중인 영화 정보를 가져옴
+    const request = await axios.get(requests.fetchNowPlaying)
+
+    // 여러 영화 중에서 무작위로 하나를 선택
+    //! Math함수 메서드
+    // Math.floor() : 소수점 이하를 버림한다.
+    // Math.ceil() : 소수점 이하를 올림한다.
+    // Math.round() : 소수점 이하를 반올림한다.
+  
+    const movieId = request.data.results[Math.floor(Math.random() * request.data.results.length)].id;
+
+    // 선택한 영화의 상세 정보를 가져옴
+    const { data: movieDetail } = await axios.get(`movie/${movieId}`, {
+      params: { append_to_response: 'videos'},
+    });
+    setMovie(movieDetail);
+  };
+
+  const truncate = (str: string | undefined, n: number) => {
+    if (!str) return str; // str이 undefined인 경우, 즉시 str을 반환 & 로직 수행을 하지 않습니다.
+   
+    // .substring => 문자열 자르기
+    // .substring(포함, 불포함)
+    // .substring(0, 2) => 인덱스 0부터 1까지
+    // 안녕하세요. 반갑습니다. 허정빈입니다.
+    // => 안녕하세요. 반갑... 으로 변경
+    return str.length > n ? str.substring(0, n - 1) + "..." : str;
+    
+  }
+
+  // 컴포넌트가 처음 렌더링 되었을 때 (play버튼 클릭 이전, isClicked가 false일 때) 배너를 보여줌
+  if (!isClicked) {
+    return (
+      <header
+        className="banner"
+        style={{
+          backgroundImage: `url("https://image.tmdb.org/t/p/original/${movie?.backdrop_path}")`,
+          backgroundPosition: "top center",
+          backgroundSize: "cover",
+        }}
+      >
+        <div className='banner_contents'>
+          <h1 className='banner_title'>
+            {movie?.title || movie?.name || movie?.original_name}
+          </h1>
+          <div className='banner_buttons'>
+            <button className='banner_button_play' onClick={() => setIsClicked(true)}>Play</button>
+            <button className='banner_button_info'>More Information</button>
+          </div>
+          <h1 className='banner_description'>{truncate(movie?.overview, 100)}</h1>
+        </div>
+        <div className='banner--fadeBottom'>
+
+        </div>
+      </header>
+    );
+  } else {
+    // 컴포넌트가 클릭되었을 때 (isClicked가 true일 때) 동영상을 보여줌
+    <Container>
+      <HomeContainer>
+        <Iframe src={`https://www.youtube.com/embed/${movie?.videos.results[0].key}?controls=0&autoplay=1&loop=1&mute=1&playlist=${movie?.videos.results[0].key}`}
+        title='YouTube video player' allow='autoplay; fullscreen'></Iframe>
+      </HomeContainer>
+    </Container>
+  }
+
+  
 }
+
+const Iframe = styled.iframe`
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0.65;
+    border: none;
+  `;
+
+const Container = styled.div`
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+`;
+
+const HomeContainer = styled.div`
+  width: 100%;
+  height: 100%;
+`;
